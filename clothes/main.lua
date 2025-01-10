@@ -9,17 +9,23 @@ local clothesLib = require('clothes')
 local clothesModelparts = {
    head = {
       models.model.Head.head,
+      models.model.Head.headLayer,
    },
    body = {
       models.model.Body.body,
+      models.model.Body.bodyLayer,
    },
    arms = {
       models.model.LeftArm.arm,
+      models.model.LeftArm.armLayer,
       models.model.RightArm.arm,
+      models.model.RightArm.armLayer,
    },
    legs = {
       models.model.LeftLeg.leg,
+      models.model.LeftLeg.legLayer,
       models.model.RightLeg.leg,
+      models.model.RightLeg.legLayer,
    },
 }
 
@@ -34,7 +40,8 @@ local clothesGroups = {
       models = {'body', 'arms', 'legs'}, -- here you specify which models from modelparts list will be used for this cloth group
       distance = 0.05, -- distance from orginal model, works similiar to inflating cube in blockbench, do not set this value too high or it might look weird
       limit = 3, -- not used by library but is used for action wheel code below, note: there is hard limit of 255 clothes per group that can't be avoided because of how clothes are compressed during ping
-      names = {'t-shirt', 'shirt', 'off shoulder thing'}
+      names = {'crop-top', 'shirt', 'off shoulder thing'},
+      covered = {'no', 'yes', 'yes'} -- whether or not the top covers the lower waist; this will hide the torso part of the pants to prevent clipping
    },
    { -- the values do same thing here as in previous group
       title = 'pants',
@@ -42,10 +49,15 @@ local clothesGroups = {
       models = {'legs', 'body'},
       distance = 0.025,
       limit = 2,
-      names = {'pants', 'shorts'}
+      names = {'pants', 'shorts'},
    },
    -- you can add more clothes groups
 }
+
+function FetchMe() -- this needs to be replaced with a proper way of getting 'torsoStr' into clothes.lua
+   local torsoStr = 'body' -- part that both shirt and pants textures will be applied to <- explain this better
+   return torsoStr -- this value is needed so that the user doesnt have to open clothes.lua and change the pattern themselves
+end
 
 local clothes = clothesLib.new(
    'clothes', -- name, if your using this library multiple times in your avatar make sure its unique
@@ -90,6 +102,8 @@ local colors = {
    '#2e2a38',
 }
 
+
+
 local page = action_wheel:newPage()
 action_wheel:setPage(page)
 
@@ -132,8 +146,11 @@ for _, group in pairs(clothesGroups) do
    action:onLeftClick(function()
       local id = clothes:getCloth(group.title)
       id = (id + 1) % (group.limit + 1)
-
-      clothes:setCloth(group.title, id)
+      if group.title == "top" then
+         clothes:setCloth(group.title, id)
+      else
+         clothes:setCloth(group.title, id)
+      end
       updateActionTitle()
    end)
 

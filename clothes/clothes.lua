@@ -91,13 +91,13 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
                expandDirs[id] = (expandDirs[id] or emptyVec3) + vertex:getNormal()
             end
          end
+         local modelName = model.getName(model)
          local modelsGroup = model:newPart('clothes_'..model:getName()):remove()
          for _, v in pairs(groupsInfo) do
             local group = groups[v]
-            local newModel = model:copy('')
+            local newModel = model:copy(modelName .. '_' .. group.title)
                :visible(false)
                :setPrimaryTexture('CUSTOM', group.texture)
-               :setSecondaryRenderType('NONE')
             table.insert(group.modelparts, newModel)
             modelsGroup:addChild(newModel)
             local dist = group.distance
@@ -134,9 +134,19 @@ function clothesHandler:update(ignoreChangeFunc)
       end
    end
    -- update layers
+   local covered
+   local torsoStr = FetchMe() -- this is a dumb way of doing this. Too Bad! 
    for _, group in pairs(self.groups) do
       local current = outfit[group.title] or vec(0, 1, 1, 1)
       local id = current.x - 1
+      local index = current.x
+      if not covered then
+         if group.covered[index]== 'yes' then
+            covered = 'yes'
+         else
+            covered = 'ignore'
+         end
+      end
       local color = current.yzw
       local uv = matrices.mat3()
       uv:translate(
@@ -148,11 +158,18 @@ function clothesHandler:update(ignoreChangeFunc)
          for _, model in pairs(group.modelparts) do model:visible(false) end
       else
          for _, model in pairs(group.modelparts) do
+            if string.find(model:getName(), torsoStr .. '[Layer]*.pants') and covered == 'yes' then
+               model:visible(false)
+                  :color(color)
+                  :uvMatrix(uv)
+            else
             model:visible(true)
                :color(color)
                :uvMatrix(uv)
+            end
          end
       end
+      
       local toggableModels = group.enableModels and group.enableModels[id + 1]
       if toggableModels then
          local name = toggableModels[1]
